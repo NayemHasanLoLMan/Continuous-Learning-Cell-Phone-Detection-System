@@ -174,7 +174,7 @@ class WebcamCapture:
             print(f"  Metadata: {self.detections_file}")
             print("="*60)
             print("\nNext step: Run Gemini verification")
-            print("  python scripts/3_gemini_verification.py")
+            print("  python scripts/gemini_verification.py")
             print("="*60)
 
 if __name__ == "__main__":

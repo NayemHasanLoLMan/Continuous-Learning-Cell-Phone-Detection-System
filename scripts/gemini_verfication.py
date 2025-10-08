@@ -212,11 +212,11 @@ class GeminiVerifier:
         if verified_images >= 50:
             print(" Ready for retraining! (≥50 samples)")
             print("\nNext step: Run retraining")
-            print("  python scripts/4_retrain_model.py")
+            print("  python scripts/retrain_model.py")
         else:
             print(f" Need {50 - verified_images} more samples for retraining")
             print("\nNext step: Continue capturing")
-            print("  python scripts/2_webcam_capture.py")
+            print("  python scripts/webcam_capture.py")
         
         print("="*60)
         

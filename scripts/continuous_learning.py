@@ -78,7 +78,7 @@ class ContinuousLearningSystem:
         
         # Import webcam capture module
         import importlib.util
-        spec = importlib.util.spec_from_file_location("webcam_capture", "scripts/2_webcam_capture.py")
+        spec = importlib.util.spec_from_file_location("webcam_capture", "scripts/webcam_capture.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         
@@ -104,9 +104,12 @@ class ContinuousLearningSystem:
             return 0, 0, 0
         
         sys.path.insert(0, 'scripts')
-        from gemini_verification import GeminiVerifier
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("gemini_verification", "scripts/gemini_verification.py")
+        gemini_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gemini_module)
         
-        verifier = GeminiVerifier(
+        verifier = gemini_module.GeminiVerifier(
             api_key=self.config['gemini']['api_key'],
             config=self.config['gemini']
         )

@@ -77,25 +77,25 @@ def run_continuous_learning():
     cycles = input("Enter number of cycles (leave empty for infinite): ").strip()
     
     if cycles:
-        os.system(f"python scripts/5_continuous_learning.py --cycles {cycles}")
+        os.system(f"python scripts/continuous_learning.py --cycles {cycles}")
     else:
-        os.system("python scripts/5_continuous_learning.py")
+        os.system("python scripts/continuous_learning.py")
 
 def run_single_cycle():
     """Run single learning cycle."""
     print("\n Running Single Learning Cycle...")
-    os.system("python scripts/5_continuous_learning.py --cycles 1")
+    os.system("python scripts/continuous_learning.py --cycles 1")
 
 def run_webcam_capture():
     """Run webcam capture."""
     print("\n Starting Webcam Capture...")
     print("Press 'q' to quit, 'c' to force capture, 's' to skip\n")
-    os.system("python scripts/2_webcam_capture.py")
+    os.system("python scripts/webcam_capture.py")
 
 def run_gemini_verification():
     """Run Gemini verification."""
     print("\n Starting Gemini Verification...")
-    os.system("python scripts/3_gemini_verification.py")
+    os.system("python scripts/gemini_verification.py")
 
 def run_improve_model():
     """Improve initial model with Roboflow data."""
@@ -104,14 +104,14 @@ def run_improve_model():
     
     confirm = input("Continue? This may take 2-4 hours. (y/n): ").lower()
     if confirm == 'y':
-        os.system("python scripts/1_improve_initial_model.py")
+        os.system("python scripts/improve_initial_model.py")
     else:
         print("Cancelled.")
 
 def run_retrain():
     """Run retraining with verified data."""
     print("\n Starting Retraining...")
-    os.system("python scripts/4_retrain_model.py")
+    os.system("python scripts/retrain_model.py")
 
 def view_statistics():
     """View system statistics."""
