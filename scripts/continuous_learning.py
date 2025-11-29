@@ -32,7 +32,9 @@ class ContinuousLearningSystem:
                     'capture_interval': 2.0,
                     'min_confidence_for_capture': 0.15,
                     'max_captures_per_session': 50,
-                    'save_format': 'jpg'
+                    'save_format': 'jpg',
+                    'use_vector_deduplication': True,
+                    'similarity_threshold': 0.15       
                 },
                 'gemini': {
                     'api_key': 'YOUR_API_KEY',

@@ -1,6 +1,8 @@
 import os
 import sys
 
+from scripts.continuous_learning import ContinuousLearningSystem
+
 def print_banner():
     """Print welcome banner."""
     print("\n" + "="*70)
@@ -74,12 +76,20 @@ def run_continuous_learning():
     print("\n Starting Continuous Learning System...")
     print("This will run indefinitely. Press Ctrl+C to stop.\n")
     
-    cycles = input("Enter number of cycles (leave empty for infinite): ").strip()
+    cycles_input = input("Enter number of cycles (leave empty for infinite): ").strip()
     
-    if cycles:
-        os.system(f"python scripts/continuous_learning.py --cycles {cycles}")
-    else:
-        os.system("python scripts/continuous_learning.py")
+    # Parse cycles
+    max_cycles = int(cycles_input) if cycles_input.isdigit() else None
+    
+    # Instantiate the class directly instead of using os.system
+    # This keeps memory persistent and is better coding practice
+    try:
+        system = ContinuousLearningSystem(config_path="config/config.yaml")
+        system.run(max_cycles=max_cycles)
+    except KeyboardInterrupt:
+        print("\nStopped by user.")
+    except Exception as e:
+        print(f"\nSystem Error: {e}")
 
 def run_single_cycle():
     """Run single learning cycle."""

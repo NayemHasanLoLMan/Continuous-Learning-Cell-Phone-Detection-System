@@ -7,6 +7,9 @@ import google.generativeai as genai
 from PIL import Image
 import time
 
+from scripts.utils.vector_db_manager import VectorDBManager
+
+
 class GeminiVerifier:
     def __init__(self, api_key, config):
         self.config = config
@@ -96,38 +99,54 @@ class GeminiVerifier:
         return [x_center, y_center, width, height]
     
     def process_verified_image(self, detection, is_phone):
-        """Move verified image to appropriate directory and create label."""
-        image_path = f"{self.pending_dir}/images/{detection['image_name']}"
-        
-        if not os.path.exists(image_path):
-            print(f"  Image not found: {image_path}")
-            return
-        
-        # Get image dimensions
-        img = Image.open(image_path)
-        img_width, img_height = img.size
-        
-        if is_phone:
-            # Move to verified positive
-            dest_img_path = f"{self.verified_positive_dir}/images/{detection['image_name']}"
-            shutil.move(image_path, dest_img_path)
+            """Move verified image to appropriate directory and create label."""
+            image_path = f"{self.pending_dir}/images/{detection['image_name']}"
             
-            # Create YOLO label file
-            label_path = f"{self.verified_positive_dir}/labels/{Path(detection['image_name']).stem}.txt"
+            if not os.path.exists(image_path):
+                print(f"  Image not found: {image_path}")
+                return
             
-            with open(label_path, 'w') as f:
-                for det in detection['detections']:
-                    bbox = det['bbox']
-                    yolo_bbox = self.convert_bbox_to_yolo(bbox, img_width, img_height)
-                    # Class 0 for cell phone
-                    f.write(f"0 {' '.join(map(str, yolo_bbox))}\n")
+            # Get image dimensions
+            img = Image.open(image_path)
+            img_width, img_height = img.size
             
-            print(f"   Verified POSITIVE: {detection['image_name']}")
-        else:
-            # Move to verified negative
-            dest_img_path = f"{self.verified_negative_dir}/images/{detection['image_name']}"
-            shutil.move(image_path, dest_img_path)
-            print(f"   Verified NEGATIVE: {detection['image_name']}")
+            if is_phone:
+                # Move to verified positive
+                dest_img_path = f"{self.verified_positive_dir}/images/{detection['image_name']}"
+                shutil.move(image_path, dest_img_path)
+                
+                # Create YOLO label file
+                label_path = f"{self.verified_positive_dir}/labels/{Path(detection['image_name']).stem}.txt"
+                
+                # Get the confidence score for metadata
+                confidence = detection['detections'][0]['confidence'] if detection['detections'] else 0.0
+
+                with open(label_path, 'w') as f:
+                    for det in detection['detections']:
+                        bbox = det['bbox']
+                        yolo_bbox = self.convert_bbox_to_yolo(bbox, img_width, img_height)
+                        # Class 0 for cell phone
+                        f.write(f"0 {' '.join(map(str, yolo_bbox))}\n")
+                
+                # --- NEW: Add to Vector Memory ---
+                # This is the Critical Step for Q1 Standards
+                try:
+                    self.vector_db.add_to_memory(
+                        image_path=dest_img_path,
+                        label="cellphone",
+                        confidence=confidence
+                    )
+                    print(f"   [Memory] Vector embedding stored.")
+                except Exception as e:
+                    print(f"   [Warning] Failed to add to Vector DB: {e}")
+                # ---------------------------------
+
+                print(f"   Verified POSITIVE: {detection['image_name']}")
+            else:
+                # Move to verified negative
+                dest_img_path = f"{self.verified_negative_dir}/images/{detection['image_name']}"
+                shutil.move(image_path, dest_img_path)
+                print(f"   Verified NEGATIVE: {detection['image_name']}")
     
     def run(self):
         """Run verification on all pending images."""

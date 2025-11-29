@@ -5,6 +5,9 @@ import time
 from datetime import datetime
 from ultralytics import YOLO
 from pathlib import Path
+from PIL import Image
+import numpy as np
+from scripts.utils.vector_db_manager import VectorDBManager
 
 class WebcamCapture:
     def __init__(self, model_path, config):
@@ -23,6 +26,11 @@ class WebcamCapture:
         self.capture_count = 0
         self.last_capture_time = 0
         
+        # Vector DB Manager for deduplication
+        self.vector_db = VectorDBManager() # Initialize DB
+        self.use_vector_db = config.get('use_vector_deduplication', True)
+        self.threshold = config.get('similarity_threshold', 0.15)
+
     def load_detections(self):
         """Load existing detections."""
         if os.path.exists(self.detections_file):
@@ -83,10 +91,10 @@ class WebcamCapture:
         
         return image_path
     
-    def run(self):
-        """Run webcam capture system."""
+def run(self):
+        """Run webcam capture system with Semantic Deduplication."""
         print("="*60)
-        print(" Webcam Capture System")
+        print(" Webcam Capture System (Active Learning + Vector Memory)")
         print("="*60)
         print(f"\nConfiguration:")
         print(f"  Capture interval: {self.config['capture_interval']}s")
@@ -129,14 +137,43 @@ class WebcamCapture:
                 cv2.putText(annotated_frame, status_text, (10, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 
-                # Auto capture if conditions met
+                # --- MODIFIED: Auto capture with Semantic Check ---
                 if len(boxes) > 0 and self.should_capture():
-                    self.capture_detection(frame, boxes, confidences)
                     
-                    # Visual feedback
-                    cv2.rectangle(annotated_frame, (0, 0), 
-                                (annotated_frame.shape[1], annotated_frame.shape[0]),
-                                (0, 255, 0), 10)
+                    should_save = True
+                    
+                    # 1. Perform Semantic Deduplication
+                    if self.use_vector_db:
+                        # Crop the primary detection (highest confidence)
+                        # Box format is [x1, y1, x2, y2]
+                        x1, y1, x2, y2 = map(int, boxes[0]) 
+                        
+                        # Ensure coordinates are within frame bounds
+                        h, w, _ = frame.shape
+                        x1, y1 = max(0, x1), max(0, y1)
+                        x2, y2 = min(w, x2), min(h, y2)
+                        
+                        if x2 > x1 and y2 > y1:
+                            crop = frame[y1:y2, x1:x2]
+                            # Convert BGR (OpenCV) to RGB (PIL) for the VectorDB
+                            pil_crop = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+                            
+                            is_unique, _ = self.vector_db.is_semantically_unique(pil_crop)
+                            
+                            if not is_unique:
+                                print(f"  [Skipped] Semantic duplicate detected (Similarity too high)")
+                                should_save = False
+                                # Visual feedback for skipped
+                                cv2.putText(annotated_frame, "Skipped: Duplicate", (10, 60), 
+                                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+                    # 2. Save if unique
+                    if should_save:
+                        self.capture_detection(frame, boxes, confidences)
+                        # Visual feedback for saved
+                        cv2.rectangle(annotated_frame, (0, 0), 
+                                    (annotated_frame.shape[1], annotated_frame.shape[0]),
+                                    (0, 255, 0), 10)
                 
                 # Show frame
                 cv2.imshow('Cell Phone Detection - Capture System', annotated_frame)
@@ -148,7 +185,7 @@ class WebcamCapture:
                     print("\n Stopping capture...")
                     break
                 elif key == ord('c') and len(boxes) > 0:
-                    # Force capture
+                    # Force capture bypasses vector check (User Override)
                     self.capture_detection(frame, boxes, confidences)
                 elif key == ord('s'):
                     # Skip next capture
@@ -171,10 +208,6 @@ class WebcamCapture:
             print("="*60)
             print(f"  Total captures: {self.capture_count}")
             print(f"  Saved to: {self.pending_dir}/")
-            print(f"  Metadata: {self.detections_file}")
-            print("="*60)
-            print("\nNext step: Run Gemini verification")
-            print("  python scripts/gemini_verification.py")
             print("="*60)
 
 if __name__ == "__main__":
