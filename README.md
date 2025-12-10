@@ -68,7 +68,7 @@ We introduce a **semantic gatekeeper architecture** that integrates vector datab
                                   │ Novel               │ Duplicate
                                   ▼                     ▼
                        ┌──────────────────┐  ┌──────────────────┐
-                       │  Gemini 1.5      │  │  Discard         │
+                       │  Gemini 2.5      │  │  Discard         │
                        │  Verification    │  │  (Log Only)      │
                        └────────┬─────────┘  └──────────────────┘
                                 │ Verified
@@ -386,7 +386,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - [Gemini API Reference](https://ai.google.dev/gemini-api/docs)
 
 ### Contact
-For research inquiries or collaboration: [hasanmahmudnayeem3027@gmail.com]
+For research inquiries or collaboration: hasanmahmudnayeem3027@gmail.com
 
 ---
 
